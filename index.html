@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="ko" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>고유명사 지킴이 · 웹소설 맞춤법 검사 도우미</title>
+
+<!-- Tailwind CSS (인터넷 연결 필요) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { darkMode: 'class' };
+  // 화면이 깜빡이지 않도록, 저장된 테마를 가장 먼저 적용합니다.
+  try {
+    var savedTheme = localStorage.getItem('nounGuard.theme.v1');
+    if (savedTheme === 'light') document.documentElement.classList.remove('dark');
+  } catch (e) {}
+</script>
+
+<style>
+  body {
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  }
+  textarea { line-height: 1.85; }
+  .thin-scroll::-webkit-scrollbar { width: 9px; height: 9px; }
+  .thin-scroll::-webkit-scrollbar-thumb { background: rgba(120,130,150,.45); border-radius: 9px; }
+  .thin-scroll::-webkit-scrollbar-track { background: transparent; }
+  mark.hl { background: #fde68a; color: #1f2937; border-radius: 3px; padding: 0 2px; }
+  .dark mark.hl { background: #a16207; color: #fef3c7; }
+</style>
+</head>
+
+<body class="h-screen overflow-hidden bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-200">
+
+<div class="flex h-full flex-col">
+
+  <!-- ===================== 상단 헤더 ===================== -->
+  <header class="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+    <div class="flex items-baseline gap-3">
+      <h1 class="text-lg font-bold tracking-tight">고유명사 지킴이</h1>
+      <span class="hidden text-xs text-slate-500 sm:inline dark:text-slate-400">
+        웹소설 원고의 이름·지명·설정 용어를 지키면서 맞춤법 검사하기
+      </span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="helpBtn" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
+        사용법
+      </button>
+      <button id="themeToggle" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
+        <span id="themeLabel">라이트 모드</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="flex min-h-0 flex-1">
+
+    <!-- ===================== 왼쪽 사이드바: 고유명사 사전 ===================== -->
+    <aside class="thin-scroll hidden w-80 shrink-0 overflow-y-auto border-r border-slate-200 bg-white p-4 md:block dark:border-slate-800 dark:bg-slate-900">
+
+      <h2 class="mb-1 text-sm font-bold">고유명사 사전</h2>
+      <p class="mb-3 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+        등장인물, 지명, 세계관 용어를 등록하세요. 입력 즉시 이 브라우저에 자동 저장됩니다.
+      </p>
+
+      <div class="flex gap-2">
+        <input id="termInput" type="text" placeholder="예) 루시아  (Enter로 추가)"
+               class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950" />
+        <button id="termAddBtn" class="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500">추가</button>
+      </div>
+      <p class="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">쉼표(,)로 여러 개를 한 번에 넣을 수 있습니다.</p>
+
+      <div class="mt-3 flex items-center justify-between">
+        <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">등록됨 <span id="termCount">0</span>개</span>
+        <div class="flex gap-1">
+          <button id="bulkToggle" class="rounded-md border border-slate-300 px-2 py-1 text-[11px] hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">여러 줄 입력</button>
+          <button id="clearTerms" class="rounded-md border border-slate-300 px-2 py-1 text-[11px] text-rose-600 hover:bg-rose-50 dark:border-slate-700 dark:text-rose-400 dark:hover:bg-rose-950/40">전체 삭제</button>
+        </div>
+      </div>
+
+      <!-- 여러 줄 일괄 입력 -->
+      <div id="bulkBox" class="mt-2 hidden">
+        <textarea id="bulkArea" rows="6" placeholder="한 줄에 하나씩 입력&#10;루시아&#10;에스페란자 왕국&#10;마나 심장"
+                  class="thin-scroll w-full resize-y rounded-lg border border-slate-300 bg-white p-2 text-sm outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950"></textarea>
+        <button id="bulkApply" class="mt-1.5 w-full rounded-lg bg-slate-700 py-2 text-xs font-semibold text-white hover:bg-slate-600 dark:bg-slate-700">목록에 추가</button>
+      </div>
+
+      <!-- 태그(칩) 목록 -->
+      <div id="termChips" class="mt-3 flex flex-wrap gap-1.5"></div>
+
+      <!-- 백업 -->
+      <div class="mt-5 border-t border-slate-200 pt-4 dark:border-slate-800">
+        <h3 class="mb-2 text-xs font-bold text-slate-600 dark:text-slate-300">사전 백업</h3>
+        <div class="flex gap-2">
+          <button id="exportTerms" class="flex-1 rounded-lg border border-slate-300 py-2 text-[11px] font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">파일로 내보내기</button>
+          <label class="flex-1 cursor-pointer rounded-lg border border-slate-300 py-2 text-center text-[11px] font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
+            불러오기
+            <input id="importTerms" type="file" accept=".json,application/json" class="hidden" />
+          </label>
+        </div>
+      </div>
+
+      <!-- 치환 옵션 -->
+      <div class="mt-5 border-t border-slate-200 pt-4 dark:border-slate-800">
+        <h3 class="mb-2 text-xs font-bold text-slate-600 dark:text-slate-300">치환 옵션</h3>
+
+        <label class="flex cursor-pointer items-start gap-2 py-1.5">
+          <input id="optBoundary" type="checkbox" class="mt-0.5 h-4 w-4 accent-indigo-600" checked />
+          <span class="text-xs">
+            <span class="font-semibold">단어 경계 확인</span>
+            <span class="block text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+              조사가 아닌 글자가 붙어 있으면 치환하지 않습니다. ('검' 등록 시 '검색'은 건드리지 않음)
+            </span>
+          </span>
+        </label>
+
+        <label class="flex cursor-pointer items-start gap-2 py-1.5">
+          <input id="optParticle" type="checkbox" class="mt-0.5 h-4 w-4 accent-indigo-600" checked />
+          <span class="text-xs">
+            <span class="font-semibold">조사까지 함께 숨기기 (권장)</span>
+            <span class="block text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+              '루시아가' 전체를 숨깁니다. 검사기가 은/는·이/가를 멋대로 고치는 사고를 막아 줍니다.
+            </span>
+          </span>
+        </label>
+
+        <label class="mt-2 block text-xs font-semibold">치환 코드 모양</label>
+        <select id="optStyle" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-950">
+          <option value="full">[[PROTECTED_1]] (기본)</option>
+          <option value="short">[[1]] (짧게 · 글자 수 제한이 있을 때)</option>
+        </select>
+      </div>
+    </aside>
+
+    <!-- ===================== 메인 영역 ===================== -->
+    <main class="thin-scroll min-w-0 flex-1 overflow-y-auto p-4 lg:p-6">
+
+      <!-- 모바일용 사전 안내 -->
+      <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 md:hidden dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+        화면이 좁아 고유명사 사전이 숨겨졌습니다. 가로가 넓은 화면(PC)에서 사용해 주세요.
+      </div>
+
+      <div class="mx-auto flex max-w-5xl flex-col gap-5">
+
+        <!-- ---------- STEP 1 : 원본 ---------- -->
+        <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 class="flex items-center gap-2 text-sm font-bold">
+              <span class="grid h-5 w-5 place-items-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">1</span>
+              원본 원고 붙여넣기
+            </h2>
+            <div class="flex items-center gap-2">
+              <span id="srcStats" class="text-[11px] text-slate-500 dark:text-slate-400"></span>
+              <button id="clearSource" class="rounded-md border border-slate-300 px-2 py-1 text-[11px] hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">비우기</button>
+            </div>
+          </div>
+
+          <textarea id="sourceText" rows="12" placeholder="여기에 원고를 붙여넣으세요."
+                    class="thin-scroll w-full resize-y rounded-lg border border-slate-300 bg-white p-3 text-sm outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950"></textarea>
+
+          <!-- 조사 검사 결과 -->
+          <div id="warnBox" class="mt-3 hidden rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-800/70 dark:bg-amber-950/30">
+            <div class="mb-2 flex items-center justify-between gap-2">
+              <h3 class="text-xs font-bold text-amber-900 dark:text-amber-200">
+                조사 확인 필요 <span id="warnCount"></span>
+              </h3>
+              <button id="fixAllBtn" class="rounded-md bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-amber-500">모두 교정</button>
+            </div>
+            <ul id="warnList" class="thin-scroll max-h-52 space-y-1.5 overflow-y-auto text-xs"></ul>
+            <p class="mt-2 text-[11px] leading-snug text-amber-800/80 dark:text-amber-300/70">
+              고유명사의 받침에 맞는 조사인지 앱이 직접 검사한 결과입니다. 맞춤법 검사기는 등록되지 않은 이름의 조사를 판단하지 못하므로, 이 검사를 먼저 통과시키는 것이 좋습니다.
+            </p>
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button id="maskBtn" class="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-500">
+              고유명사 숨기기 (치환) + 복사
+            </button>
+            <span id="hitInfo" class="text-xs text-slate-500 dark:text-slate-400"></span>
+          </div>
+        </section>
+
+        <!-- ---------- STEP 2 : 치환 결과 ---------- -->
+        <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 class="flex items-center gap-2 text-sm font-bold">
+              <span class="grid h-5 w-5 place-items-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">2</span>
+              치환된 원고를 검사기에 넣기
+            </h2>
+            <span id="maskStats" class="text-[11px] text-slate-500 dark:text-slate-400"></span>
+          </div>
+
+          <textarea id="maskedText" rows="8" readonly placeholder="1단계 버튼을 누르면 여기에 결과가 나옵니다."
+                    class="thin-scroll w-full resize-y rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm outline-none dark:border-slate-700 dark:bg-slate-950/60"></textarea>
+
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button id="copyMasked" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">치환 결과 복사</button>
+            <a href="https://search.naver.com/search.naver?query=%EB%A7%9E%EC%B6%A4%EB%B2%95+%EA%B2%80%EC%82%AC%EA%B8%B0" target="_blank" rel="noopener noreferrer"
+               class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500">네이버 맞춤법 검사기 열기</a>
+            <a href="http://speller.cs.pusan.ac.kr/" target="_blank" rel="noopener noreferrer"
+               class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">부산대 맞춤법 검사기 열기</a>
+            <button id="mapToggle" class="ml-auto rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">치환표 보기</button>
+          </div>
+
+          <div id="mapBox" class="mt-3 hidden">
+            <div class="thin-scroll max-h-60 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-800">
+              <table class="w-full text-left text-xs">
+                <thead class="sticky top-0 bg-slate-100 dark:bg-slate-800">
+                  <tr>
+                    <th class="px-3 py-2 font-semibold">치환 코드</th>
+                    <th class="px-3 py-2 font-semibold">원래 텍스트</th>
+                    <th class="px-3 py-2 font-semibold">고유명사</th>
+                    <th class="px-3 py-2 text-right font-semibold">횟수</th>
+                  </tr>
+                </thead>
+                <tbody id="mapBody" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
+              </table>
+            </div>
+            <p id="mapMeta" class="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400"></p>
+          </div>
+        </section>
+
+        <!-- ---------- STEP 3 : 복원 ---------- -->
+        <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 class="flex items-center gap-2 text-sm font-bold">
+              <span class="grid h-5 w-5 place-items-center rounded-full bg-indigo-600 text-[11px] font-bold text-white">3</span>
+              검사 끝난 원고 되돌리기
+            </h2>
+            <span id="chkStats" class="text-[11px] text-slate-500 dark:text-slate-400"></span>
+          </div>
+
+          <textarea id="checkedText" rows="8" placeholder="맞춤법 검사기에서 고쳐진 글을 여기에 붙여넣으세요."
+                    class="thin-scroll w-full resize-y rounded-lg border border-slate-300 bg-white p-3 text-sm outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950"></textarea>
+
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button id="restoreBtn" class="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-500">
+              고유명사 되돌리기 (복원)
+            </button>
+            <span id="storedInfo" class="text-xs text-slate-500 dark:text-slate-400"></span>
+          </div>
+
+          <div id="restoreReport" class="mt-3 hidden rounded-lg border p-3 text-xs"></div>
+
+          <div class="mt-4">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-xs font-bold text-slate-600 dark:text-slate-300">최종 원고</h3>
+              <span id="resStats" class="text-[11px] text-slate-500 dark:text-slate-400"></span>
+            </div>
+            <textarea id="resultText" rows="10" placeholder="복원 결과가 여기에 나옵니다."
+                      class="thin-scroll w-full resize-y rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950/60"></textarea>
+            <button id="copyResult" class="mt-2 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600">
+              최종 원고 복사하기
+            </button>
+          </div>
+        </section>
+
+        <p class="pb-6 text-center text-[11px] text-slate-400 dark:text-slate-600">
+          모든 데이터는 서버로 전송되지 않고 이 브라우저 안에만 저장됩니다.
+        </p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ===================== 사용법 모달 ===================== -->
+<div id="helpModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/60 p-4">
+  <div class="thin-scroll max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 dark:bg-slate-900">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-base font-bold">사용법</h2>
+      <button id="helpClose" class="rounded-md border border-slate-300 px-2 py-1 text-xs dark:border-slate-700">닫기</button>
+    </div>
+    <ol class="list-decimal space-y-2 pl-5 text-sm leading-relaxed">
+      <li>왼쪽 사전에 인물 이름, 지명, 세계관 용어를 등록합니다.</li>
+      <li>1단계에 원고를 붙여넣습니다. 조사가 잘못된 곳이 있으면 노란 상자로 알려 줍니다. 필요하면 '고치기'를 눌러 바로잡습니다.</li>
+      <li>'고유명사 숨기기' 버튼을 누르면 이름이 치환 코드로 바뀌고 클립보드에 자동 복사됩니다.</li>
+      <li>2단계의 검사기 링크를 열어 붙여넣고 맞춤법 검사를 받습니다.</li>
+      <li>고쳐진 글을 복사해 3단계에 붙여넣고 '되돌리기'를 누르면 원래 이름이 돌아옵니다.</li>
+      <li>'최종 원고 복사하기'로 마무리합니다.</li>
+    </ol>
+    <div class="mt-4 rounded-lg bg-slate-100 p-3 text-xs leading-relaxed dark:bg-slate-800">
+      <p class="font-semibold">왜 조사까지 숨기나요?</p>
+      <p class="mt-1 text-slate-600 dark:text-slate-300">
+        맞춤법 검사기는 '루시아'라는 이름을 모르기 때문에, 코드 뒤에 남은 '가'를 '이'로 바꾸는 등 엉뚱하게 고칠 수 있습니다.
+        이름과 조사를 한 덩어리로 숨기면 그런 사고를 막을 수 있고, 조사 자체는 이 앱이 받침 규칙으로 대신 검사해 줍니다.
+      </p>
+    </div>
+    <div class="mt-3 rounded-lg bg-rose-50 p-3 text-xs leading-relaxed dark:bg-rose-950/40">
+      <p class="font-semibold text-rose-800 dark:text-rose-300">주의</p>
+      <p class="mt-1 text-rose-700 dark:text-rose-300/80">
+        치환표는 이 브라우저에 저장됩니다. 시크릿 창을 닫거나 브라우저 데이터를 지우면 사라지므로, 1단계와 3단계는 되도록 한 번에 마치세요.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 알림 토스트 ===================== -->
+<div id="toast" class="pointer-events-none fixed bottom-5 left-1/2 z-50 hidden -translate-x-1/2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-lg"></div>
+
+<script>
+/* =============================================================================
+   고유명사 지킴이 - 동작 스크립트
+   이 파일 하나로 모든 기능이 돌아갑니다. 아래 주석을 따라 읽으면
+   어디를 고쳐야 하는지 알 수 있습니다.
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   [1] 브라우저 저장소 키 이름
+   ----------------------------------------------------------------------------- */
+const STORE = {
+  terms:   'nounGuard.terms.v1',    // 고유명사 목록
+  source:  'nounGuard.source.v1',   // 1단계 원본 원고
+  checked: 'nounGuard.checked.v1',  // 3단계 붙여넣은 글
+  result:  'nounGuard.result.v1',   // 3단계 최종 결과
+  mapping: 'nounGuard.mapping.v1',  // 치환표 (번호 <-> 원래 텍스트)
+  options: 'nounGuard.options.v1',  // 치환 옵션
+  theme:   'nounGuard.theme.v1'     // 다크/라이트
+};
+
+/* localStorage가 막힌 환경에서도 앱이 죽지 않도록 감싸 둡니다. */
+function load(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw === null ? fallback : JSON.parse(raw);
+  } catch (e) { return fallback; }
+}
+function save(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+}
+
+/* -----------------------------------------------------------------------------
+   [2] 한국어 조사 목록
+   조사를 더 넣고 싶으면 아래 배열에 추가하세요.
+
+   - PARTICLE_PAIRS   : 받침 유무로 모양이 바뀌는 조사 [받침 있을 때, 받침 없을 때]
+   - PARTICLE_PAIRS_RO: '으로/로' 계열. ㄹ 받침 뒤에서는 '로'를 씁니다. (서울로)
+   - PARTICLES_FIXED  : 모양이 바뀌지 않는 조사
+   - SUFFIXES         : 이름 뒤에 붙는 호칭 (루시아님이 -> 루시아 + 님 + 이)
+   ----------------------------------------------------------------------------- */
+const PARTICLE_PAIRS = [
+  ['은','는'], ['이','가'], ['을','를'], ['과','와'], ['아','야'],
+  ['이랑','랑'], ['이나','나'], ['이며','며'], ['이여','여'],
+  ['이든','든'], ['이든지','든지'], ['이야','야'],
+  ['이라고','라고'], ['이라는','라는'], ['이라도','라도'], ['이시여','시여'],
+  ['과는','와는'], ['과도','와도'], ['과의','와의'], ['과를','와를'], ['과만','와만']
+];
+
+const PARTICLE_PAIRS_RO = [
+  ['으로','로'], ['으로서','로서'], ['으로써','로써'], ['으로부터','로부터'],
+  ['으로는','로는'], ['으로도','로도'], ['으로만','로만'], ['으로의','로의'], ['으론','론']
+];
+
+const PARTICLES_FIXED = [
+  '의','에','에는','에도','에만','에서','에서는','에서도','에서의',
+  '에게','에게는','에게도','에게만','에게서','에겐',
+  '한테','한테는','한테도','한테서',
+  '께','께는','께서','께서는','께서도','께선',
+  '도','만','만은','만을','만이','만도','만큼','밖에',
+  '부터','부터는','부터도','까지','까지는','까지도',
+  '조차','조차도','마저','마저도','뿐','뿐만',
+  '처럼','처럼은','같이','보다','보다는','대로','마다','커녕','하고','치고'
+];
+
+const SUFFIXES = ['님','씨','양','군','짱','쨩'];
+const SUFFIXES_SORTED = SUFFIXES.slice().sort((a, b) => b.length - a.length);
+
+/* 위 목록을 빠르게 조회할 수 있는 형태로 가공합니다. */
+const PARTICLE_SET = new Set();
+const PARTICLE_RULE = new Map(); // 조사 -> 검사 규칙
+
+PARTICLE_PAIRS.forEach(pair => {
+  PARTICLE_SET.add(pair[0]); PARTICLE_SET.add(pair[1]);
+  PARTICLE_RULE.set(pair[0], { kind: 'normal', withJong: pair[0], noJong: pair[1] });
+  PARTICLE_RULE.set(pair[1], { kind: 'normal', withJong: pair[0], noJong: pair[1] });
+});
+PARTICLE_PAIRS_RO.forEach(pair => {
+  PARTICLE_SET.add(pair[0]); PARTICLE_SET.add(pair[1]);
+  PARTICLE_RULE.set(pair[0], { kind: 'ro', withJong: pair[0], noJong: pair[1] });
+  PARTICLE_RULE.set(pair[1], { kind: 'ro', withJong: pair[0], noJong: pair[1] });
+});
+PARTICLES_FIXED.forEach(p => PARTICLE_SET.add(p));
+
+/* -----------------------------------------------------------------------------
+   [3] 한글 글자 판별 / 받침 구하기
+   ----------------------------------------------------------------------------- */
+function isHangulSyllable(ch) {
+  if (!ch) return false;
+  const code = ch.charCodeAt(0);
+  return code >= 0xAC00 && code <= 0xD7A3;
+}
+/* 받침 번호를 돌려줍니다. 0이면 받침 없음, 8이면 ㄹ 받침. */
+function getJong(ch) {
+  if (!isHangulSyllable(ch)) return -1; // 한글이 아니면 검사하지 않음
+  return (ch.charCodeAt(0) - 0xAC00) % 28;
+}
+
+/* 앞 글자(baseChar)에 대해 이 조사가 올바른지 확인합니다.
+   문제가 없으면 null, 있으면 올바른 조사를 돌려줍니다. */
+function checkParticle(baseChar, particle) {
+  const rule = PARTICLE_RULE.get(particle);
+  if (!rule) return null;                 // 모양이 안 바뀌는 조사는 검사 대상 아님
+  const jong = getJong(baseChar);
+  if (jong < 0) return null;              // 한글이 아니면 판단 불가
+  let correct;
+  if (rule.kind === 'ro') {
+    correct = (jong === 0 || jong === 8) ? rule.noJong : rule.withJong; // ㄹ 받침은 '로'
+  } else {
+    correct = (jong === 0) ? rule.noJong : rule.withJong;
+  }
+  return correct === particle ? null : correct;
+}
+
+/* -----------------------------------------------------------------------------
+   [4] 상태값
+   ----------------------------------------------------------------------------- */
+const state = {
+  terms: load(STORE.terms, []),
+  options: Object.assign({ boundary: true, withParticle: true, style: 'full' }, load(STORE.options, {})),
+  mapping: load(STORE.mapping, null),  // { createdAt, style, items:[{id, full, term, tail, count}] }
+  occurrences: [],
+  warnings: []
+};
+
+/* 짧은 이름이 긴 이름을 잘라먹지 않도록 항상 긴 것부터 찾습니다. */
+function sortedTerms() {
+  return state.terms.slice().sort((a, b) => b.length - a.length || a.localeCompare(b, 'ko'));
+}
+
+/* -----------------------------------------------------------------------------
+   [5] 원고에서 고유명사 찾기
+   결과: [{ start, end, term, suffix, particle, pStart, pEnd }]
+     start~end : 치환할 구간 (옵션에 따라 조사 포함 여부가 달라짐)
+     pStart~pEnd : 조사가 놓인 구간 (조사 교정에 사용)
+   ----------------------------------------------------------------------------- */
+function findOccurrences(text) {
+  const terms = sortedTerms();
+  const out = [];
+  if (!text || terms.length === 0) return out;
+
+  let i = 0;
+  while (i < text.length) {
+    let hit = null;
+    for (let t = 0; t < terms.length; t++) {
+      if (terms[t] && text.startsWith(terms[t], i)) { hit = terms[t]; break; }
+    }
+
+    if (hit) {
+      const tailStart = i + hit.length;
+
+      // 고유명사 뒤에 이어지는 한글 덩어리를 뽑습니다. (예: '루시아님이' -> '님이')
+      let runEnd = tailStart;
+      while (runEnd < text.length && isHangulSyllable(text[runEnd])) runEnd++;
+      const run = text.slice(tailStart, runEnd);
+
+      const parsed = parseTail(run);
+      const prevChar = i > 0 ? text[i - 1] : '';
+      let accept = true;
+
+      if (state.options.boundary) {
+        // 앞뒤가 다른 낱말의 일부라면 건드리지 않습니다.
+        if (isHangulSyllable(prevChar)) accept = false;
+        else if (!parsed.ok) accept = false;
+      }
+
+      if (accept) {
+        const suffix = parsed.ok ? parsed.suffix : '';
+        const particle = parsed.ok ? parsed.particle : '';
+        const pStart = tailStart + suffix.length;
+        const pEnd = pStart + particle.length;
+        const end = state.options.withParticle ? pEnd : tailStart;
+
+        out.push({ start: i, end: end, term: hit, suffix: suffix, particle: particle, pStart: pStart, pEnd: pEnd });
+        i = Math.max(end, pEnd); // 같은 자리를 두 번 처리하지 않도록 조사 끝까지 건너뜁니다.
+        continue;
+      }
+    }
+    i++;
+  }
+  return out;
+}
+
+/* 고유명사 뒤 덩어리를 [호칭 + 조사]로 쪼갭니다. */
+function parseTail(run) {
+  if (run === '') return { ok: true, suffix: '', particle: '' };
+  if (PARTICLE_SET.has(run)) return { ok: true, suffix: '', particle: run };
+  for (let s = 0; s < SUFFIXES_SORTED.length; s++) {
+    const sfx = SUFFIXES_SORTED[s];
+    if (run.startsWith(sfx)) {
+      const rest = run.slice(sfx.length);
+      if (rest === '') return { ok: true, suffix: sfx, particle: '' };
+      if (PARTICLE_SET.has(rest)) return { ok: true, suffix: sfx, particle: rest };
+    }
+  }
+  return { ok: false, suffix: '', particle: '' };
+}
+
+/* -----------------------------------------------------------------------------
+   [6] 조사 검사
+   ----------------------------------------------------------------------------- */
+function collectWarnings(text, occ) {
+  const list = [];
+  for (let k = 0; k < occ.length && list.length < 300; k++) {
+    const o = occ[k];
+    if (!o.particle) continue;
+    const baseChar = text[o.pStart - 1]; // 조사 바로 앞 글자 (호칭이 있으면 호칭의 끝 글자)
+    const correct = checkParticle(baseChar, o.particle);
+    if (correct) {
+      list.push({
+        index: k,
+        pStart: o.pStart,
+        pEnd: o.pEnd,
+        base: o.term + o.suffix,
+        current: o.particle,
+        correct: correct,
+        context: text.slice(Math.max(0, o.start - 8), Math.min(text.length, o.pEnd + 8))
+      });
+    }
+  }
+  return list;
+}
+
+/* -----------------------------------------------------------------------------
+   [7] 치환 코드 만들기 / 되돌리기
+   치환 코드 모양을 바꾸고 싶으면 아래 makePlaceholder 함수만 고치면 됩니다.
+   ----------------------------------------------------------------------------- */
+function makePlaceholder(id, style) {
+  return style === 'short' ? '[[' + id + ']]' : '[[PROTECTED_' + id + ']]';
+}
+
+function buildMasked(text, occ, style) {
+  const seen = new Map(); // 같은 텍스트는 같은 번호를 재사용합니다.
+  const items = [];
+  let out = '';
+  let last = 0;
+
+  for (let k = 0; k < occ.length; k++) {
+    const o = occ[k];
+    const full = text.slice(o.start, o.end);
+    let id = seen.get(full);
+    if (id === undefined) {
+      id = items.length + 1;
+      seen.set(full, id);
+      items.push({ id: id, full: full, term: o.term, tail: o.suffix + o.particle, count: 0 });
+    }
+    items[id - 1].count++;
+    out += text.slice(last, o.start) + makePlaceholder(id, style);
+    last = o.end;
+  }
+  out += text.slice(last);
+  return { text: out, items: items };
+}
+
+/* 검사기가 코드 안에 공백을 넣거나 대괄호를 하나 지우는 경우까지 감안한 되돌리기 규칙 */
+const RE_FULL  = /\[\s*\[\s*P\s*R\s*O\s*T\s*E\s*C\s*T\s*E\s*D\s*_?\s*(\d+)\s*\]\s*\]/gi;
+const RE_SHORT = /\[\s*\[\s*(\d+)\s*\]\s*\]/g;
+const RE_LOOSE = /\[\s*P\s*R\s*O\s*T\s*E\s*C\s*T\s*E\s*D\s*_?\s*(\d+)\s*\]/gi;
+
+function restoreText(text, mapping) {
+  const byId = new Map();
+  mapping.items.forEach(it => byId.set(String(it.id), it.full));
+
+  const used = new Set();
+  let unknown = 0;
+
+  function replacer(match, num) {
+    const value = byId.get(String(Number(num)));
+    if (value === undefined) { unknown++; return match; }
+    used.add(String(Number(num)));
+    return value;
+  }
+
+  let out = text.replace(RE_FULL, replacer);
+  out = out.replace(RE_SHORT, replacer);
+  out = out.replace(RE_LOOSE, replacer);
+
+  // 되돌리지 못하고 남은 코드가 있는지 확인합니다.
+  const leftover = (out.match(/PROTECTED/gi) || []).length;
+
+  // 검사기가 통째로 지워 버린 코드가 있는지 확인합니다.
+  const missing = mapping.items.filter(it => !used.has(String(it.id)));
+
+  return { text: out, usedCount: used.size, unknown: unknown, leftover: leftover, missing: missing };
+}
+
+/* -----------------------------------------------------------------------------
+   [8] 글자 수 / 원고지 매수
+   200자 원고지 기준이며, 공백을 포함해서 셉니다.
+   ----------------------------------------------------------------------------- */
+function statText(text) {
+  const all = text.length;
+  const noSpace = text.replace(/\s/g, '').length;
+  const sheets = (all / 200);
+  return '공백 포함 ' + all.toLocaleString() + '자 · 공백 제외 ' + noSpace.toLocaleString() +
+         '자 · 원고지 ' + sheets.toFixed(1) + '매';
+}
+
+/* -----------------------------------------------------------------------------
+   [9] 화면 요소 모으기
+   ----------------------------------------------------------------------------- */
+const $ = id => document.getElementById(id);
+const el = {
+  termInput: $('termInput'), termAddBtn: $('termAddBtn'), termChips: $('termChips'), termCount: $('termCount'),
+  bulkToggle: $('bulkToggle'), bulkBox: $('bulkBox'), bulkArea: $('bulkArea'), bulkApply: $('bulkApply'),
+  clearTerms: $('clearTerms'), exportTerms: $('exportTerms'), importTerms: $('importTerms'),
+  optBoundary: $('optBoundary'), optParticle: $('optParticle'), optStyle: $('optStyle'),
+  sourceText: $('sourceText'), srcStats: $('srcStats'), clearSource: $('clearSource'),
+  warnBox: $('warnBox'), warnList: $('warnList'), warnCount: $('warnCount'), fixAllBtn: $('fixAllBtn'),
+  maskBtn: $('maskBtn'), hitInfo: $('hitInfo'),
+  maskedText: $('maskedText'), maskStats: $('maskStats'), copyMasked: $('copyMasked'),
+  mapToggle: $('mapToggle'), mapBox: $('mapBox'), mapBody: $('mapBody'), mapMeta: $('mapMeta'),
+  checkedText: $('checkedText'), chkStats: $('chkStats'), restoreBtn: $('restoreBtn'),
+  storedInfo: $('storedInfo'), restoreReport: $('restoreReport'),
+  resultText: $('resultText'), resStats: $('resStats'), copyResult: $('copyResult'),
+  themeToggle: $('themeToggle'), themeLabel: $('themeLabel'),
+  helpBtn: $('helpBtn'), helpModal: $('helpModal'), helpClose: $('helpClose'),
+  toast: $('toast')
+};
+
+/* -----------------------------------------------------------------------------
+   [10] 공통 기능: 토스트 알림, 클립보드 복사, HTML escape
+   ----------------------------------------------------------------------------- */
+let toastTimer = null;
+function toast(message, kind) {
+  el.toast.textContent = message;
+  el.toast.className = 'fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-lg ' +
+    (kind === 'error' ? 'bg-rose-600' : kind === 'warn' ? 'bg-amber-600' : 'bg-slate-800 dark:bg-slate-700');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.toast.classList.add('hidden'); }, 2200);
+}
+
+async function copyToClipboard(text) {
+  if (!text) { toast('복사할 내용이 없습니다.', 'warn'); return false; }
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    // 구형 브라우저나 보안 제한 환경을 위한 대체 방법
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/* -----------------------------------------------------------------------------
+   [11] 고유명사 사전 관리
+   ----------------------------------------------------------------------------- */
+function addTerms(rawInput) {
+  const pieces = String(rawInput).split(/[\n,]/).map(s => s.trim()).filter(Boolean);
+  let added = 0;
+  pieces.forEach(p => {
+    if (state.terms.indexOf(p) === -1) { state.terms.push(p); added++; }
+  });
+  if (added > 0) {
+    save(STORE.terms, state.terms);
+    renderTerms();
+    analyze();
+    toast(added + '개를 사전에 추가했습니다.');
+  } else if (pieces.length > 0) {
+    toast('이미 등록된 고유명사입니다.', 'warn');
+  }
+}
+
+function removeTerm(term) {
+  state.terms = state.terms.filter(t => t !== term);
+  save(STORE.terms, state.terms);
+  renderTerms();
+  analyze();
+}
+
+function renderTerms() {
+  el.termCount.textContent = state.terms.length;
+  if (state.terms.length === 0) {
+    el.termChips.innerHTML = '<p class="text-xs text-slate-400 dark:text-slate-600">아직 등록된 고유명사가 없습니다.</p>';
+    return;
+  }
+  el.termChips.innerHTML = state.terms.map(t =>
+    '<span class="group inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-medium text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200">' +
+      escapeHtml(t) +
+      '<button data-term="' + escapeHtml(t) + '" class="chip-del ml-0.5 rounded-full px-1 text-indigo-500 hover:bg-indigo-200 hover:text-indigo-900 dark:hover:bg-indigo-800 dark:hover:text-white" title="삭제">&times;</button>' +
+    '</span>'
+  ).join('');
+}
+
+el.termChips.addEventListener('click', e => {
+  const btn = e.target.closest('.chip-del');
+  if (btn) removeTerm(btn.getAttribute('data-term'));
+});
+
+el.termAddBtn.addEventListener('click', () => {
+  addTerms(el.termInput.value);
+  el.termInput.value = '';
+  el.termInput.focus();
+});
+el.termInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); el.termAddBtn.click(); }
+});
+
+el.bulkToggle.addEventListener('click', () => el.bulkBox.classList.toggle('hidden'));
+el.bulkApply.addEventListener('click', () => {
+  addTerms(el.bulkArea.value);
+  el.bulkArea.value = '';
+});
+
+el.clearTerms.addEventListener('click', () => {
+  if (state.terms.length === 0) return;
+  if (!confirm('등록된 고유명사 ' + state.terms.length + '개를 모두 지웁니다. 계속할까요?')) return;
+  state.terms = [];
+  save(STORE.terms, state.terms);
+  renderTerms();
+  analyze();
+});
+
+el.exportTerms.addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify({ terms: state.terms }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '고유명사사전.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+el.importTerms.addEventListener('change', e => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(String(reader.result));
+      const arr = Array.isArray(data) ? data : data.terms;
+      if (!Array.isArray(arr)) throw new Error('형식이 다릅니다.');
+      addTerms(arr.join('\n'));
+    } catch (err) {
+      toast('파일을 읽지 못했습니다. 이 앱에서 내보낸 파일인지 확인해 주세요.', 'error');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file, 'utf-8');
+});
+
+/* -----------------------------------------------------------------------------
+   [12] 옵션
+   ----------------------------------------------------------------------------- */
+function applyOptionsToUI() {
+  el.optBoundary.checked = state.options.boundary;
+  el.optParticle.checked = state.options.withParticle;
+  el.optStyle.value = state.options.style;
+}
+function readOptionsFromUI() {
+  state.options.boundary = el.optBoundary.checked;
+  state.options.withParticle = el.optParticle.checked;
+  state.options.style = el.optStyle.value;
+  save(STORE.options, state.options);
+  analyze();
+}
+el.optBoundary.addEventListener('change', readOptionsFromUI);
+el.optParticle.addEventListener('change', readOptionsFromUI);
+el.optStyle.addEventListener('change', readOptionsFromUI);
+
+/* -----------------------------------------------------------------------------
+   [13] 원고 분석 (입력할 때마다 자동 실행)
+   ----------------------------------------------------------------------------- */
+let analyzeTimer = null;
+function scheduleAnalyze() {
+  clearTimeout(analyzeTimer);
+  analyzeTimer = setTimeout(analyze, 250);
+}
+
+function analyze() {
+  const text = el.sourceText.value;
+  el.srcStats.textContent = statText(text);
+
+  state.occurrences = findOccurrences(text);
+  state.warnings = collectWarnings(text, state.occurrences);
+
+  const uniqueTerms = new Set(state.occurrences.map(o => o.term));
+  el.hitInfo.textContent = state.occurrences.length === 0
+    ? (state.terms.length === 0 ? '먼저 왼쪽에 고유명사를 등록하세요.' : '원고에서 찾은 고유명사가 없습니다.')
+    : '고유명사 ' + uniqueTerms.size + '종, 총 ' + state.occurrences.length + '곳을 찾았습니다.';
+
+  renderWarnings();
+}
+
+function renderWarnings() {
+  if (state.warnings.length === 0) {
+    el.warnBox.classList.add('hidden');
+    el.warnList.innerHTML = '';
+    return;
+  }
+  el.warnBox.classList.remove('hidden');
+  el.warnCount.textContent = state.warnings.length + '곳';
+  el.warnList.innerHTML = state.warnings.map((w, i) =>
+    '<li class="flex items-start justify-between gap-2 rounded-md bg-white/70 px-2 py-1.5 dark:bg-slate-900/60">' +
+      '<div class="min-w-0">' +
+        '<span class="block truncate text-slate-700 dark:text-slate-200">…' + escapeHtml(w.context) + '…</span>' +
+        '<span class="block text-[11px] text-slate-500 dark:text-slate-400">' +
+          '‘' + escapeHtml(w.base) + '’ 뒤 조사는 ' +
+          '<b class="text-amber-700 dark:text-amber-300">‘' + escapeHtml(w.correct) + '’</b>' +
+          ' (현재 ‘' + escapeHtml(w.current) + '’)' +
+        '</span>' +
+      '</div>' +
+      '<button data-warn="' + i + '" class="warn-fix shrink-0 rounded-md border border-amber-500 px-2 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/40">고치기</button>' +
+    '</li>'
+  ).join('');
+}
+
+el.warnList.addEventListener('click', e => {
+  const btn = e.target.closest('.warn-fix');
+  if (!btn) return;
+  const w = state.warnings[Number(btn.getAttribute('data-warn'))];
+  if (!w) return;
+  const text = el.sourceText.value;
+  el.sourceText.value = text.slice(0, w.pStart) + w.correct + text.slice(w.pEnd);
+  save(STORE.source, el.sourceText.value);
+  analyze();
+  toast('조사를 ‘' + w.correct + '’ 으로 고쳤습니다.');
+});
+
+el.fixAllBtn.addEventListener('click', () => {
+  if (state.warnings.length === 0) return;
+  const count = state.warnings.length;
+  let text = el.sourceText.value;
+  // 뒤에서부터 고쳐야 앞쪽 위치가 밀리지 않습니다.
+  const sorted = state.warnings.slice().sort((a, b) => b.pStart - a.pStart);
+  sorted.forEach(w => { text = text.slice(0, w.pStart) + w.correct + text.slice(w.pEnd); });
+  el.sourceText.value = text;
+  save(STORE.source, text);
+  analyze();
+  toast(count + '곳의 조사를 고쳤습니다.');
+});
+
+el.sourceText.addEventListener('input', () => {
+  save(STORE.source, el.sourceText.value);
+  scheduleAnalyze();
+});
+el.clearSource.addEventListener('click', () => {
+  if (!el.sourceText.value) return;
+  if (!confirm('1단계 원본 원고를 비웁니다. 계속할까요?')) return;
+  el.sourceText.value = '';
+  save(STORE.source, '');
+  analyze();
+});
+
+/* -----------------------------------------------------------------------------
+   [14] 1단계 버튼: 치환하고 클립보드에 복사
+   ----------------------------------------------------------------------------- */
+el.maskBtn.addEventListener('click', async () => {
+  const text = el.sourceText.value;
+  if (!text.trim()) { toast('원본 원고를 먼저 입력하세요.', 'warn'); return; }
+  if (state.terms.length === 0) { toast('왼쪽에 고유명사를 먼저 등록하세요.', 'warn'); return; }
+
+  analyze();
+  if (state.occurrences.length === 0) {
+    toast('원고에서 등록된 고유명사를 찾지 못했습니다.', 'warn');
+    return;
+  }
+
+  const built = buildMasked(text, state.occurrences, state.options.style);
+  el.maskedText.value = built.text;
+  el.maskStats.textContent = statText(built.text);
+
+  state.mapping = {
+    createdAt: new Date().toISOString(),
+    style: state.options.style,
+    items: built.items
+  };
+  save(STORE.mapping, state.mapping);
+  renderMap();
+
+  const ok = await copyToClipboard(built.text);
+  toast(ok
+    ? '치환 완료. 클립보드에 복사했습니다. (' + built.items.length + '종)'
+    : '치환은 됐지만 자동 복사에 실패했습니다. 아래 상자에서 직접 복사하세요.',
+    ok ? 'ok' : 'warn');
+});
+
+el.copyMasked.addEventListener('click', async () => {
+  const ok = await copyToClipboard(el.maskedText.value);
+  toast(ok ? '복사했습니다.' : '복사에 실패했습니다.', ok ? 'ok' : 'error');
+});
+
+function renderMap() {
+  if (!state.mapping || !state.mapping.items || state.mapping.items.length === 0) {
+    el.mapBody.innerHTML = '<tr><td colspan="4" class="px-3 py-4 text-center text-slate-400">치환표가 없습니다.</td></tr>';
+    el.mapMeta.textContent = '';
+    el.storedInfo.textContent = '보관 중인 치환표가 없습니다. 1단계를 먼저 실행하세요.';
+    return;
+  }
+  el.mapBody.innerHTML = state.mapping.items.map(it =>
+    '<tr>' +
+      '<td class="px-3 py-1.5 font-mono text-[11px] text-indigo-600 dark:text-indigo-300">' + escapeHtml(makePlaceholder(it.id, state.mapping.style)) + '</td>' +
+      '<td class="px-3 py-1.5">' + escapeHtml(it.full) + '</td>' +
+      '<td class="px-3 py-1.5 text-slate-500 dark:text-slate-400">' + escapeHtml(it.term) + '</td>' +
+      '<td class="px-3 py-1.5 text-right text-slate-500 dark:text-slate-400">' + it.count + '</td>' +
+    '</tr>'
+  ).join('');
+
+  const when = new Date(state.mapping.createdAt);
+  const stamp = when.getFullYear() + '-' + String(when.getMonth() + 1).padStart(2, '0') + '-' +
+                String(when.getDate()).padStart(2, '0') + ' ' +
+                String(when.getHours()).padStart(2, '0') + ':' + String(when.getMinutes()).padStart(2, '0');
+  el.mapMeta.textContent = '만든 시각 ' + stamp + ' · 이 치환표는 브라우저에 저장되어 새로고침해도 남아 있습니다.';
+  el.storedInfo.textContent = '보관 중인 치환표: ' + state.mapping.items.length + '종 (' + stamp + ')';
+}
+
+el.mapToggle.addEventListener('click', () => {
+  el.mapBox.classList.toggle('hidden');
+  el.mapToggle.textContent = el.mapBox.classList.contains('hidden') ? '치환표 보기' : '치환표 접기';
+});
+
+/* -----------------------------------------------------------------------------
+   [15] 3단계 버튼: 되돌리기
+   ----------------------------------------------------------------------------- */
+el.checkedText.addEventListener('input', () => {
+  save(STORE.checked, el.checkedText.value);
+  el.chkStats.textContent = statText(el.checkedText.value);
+});
+el.resultText.addEventListener('input', () => {
+  save(STORE.result, el.resultText.value);
+  el.resStats.textContent = statText(el.resultText.value);
+});
+
+el.restoreBtn.addEventListener('click', () => {
+  const text = el.checkedText.value;
+  if (!text.trim()) { toast('검사 끝난 글을 먼저 붙여넣으세요.', 'warn'); return; }
+  if (!state.mapping || !state.mapping.items || state.mapping.items.length === 0) {
+    toast('보관된 치환표가 없습니다. 1단계부터 다시 진행해 주세요.', 'error');
+    return;
+  }
+
+  const r = restoreText(text, state.mapping);
+  el.resultText.value = r.text;
+  el.resStats.textContent = statText(r.text);
+  save(STORE.result, r.text);
+
+  // 결과 보고
+  const problems = [];
+  if (r.leftover > 0) problems.push('되돌리지 못한 치환 코드가 ' + r.leftover + '개 남아 있습니다. 치환표에 없는 번호일 수 있습니다.');
+  if (r.unknown > 0) problems.push('치환표에 없는 번호 ' + r.unknown + '개를 발견했습니다.');
+  if (r.missing.length > 0) {
+    problems.push('검사기에서 사라진 것으로 보이는 고유명사가 ' + r.missing.length + '개 있습니다: ' +
+      r.missing.slice(0, 8).map(m => m.full).join(', ') + (r.missing.length > 8 ? ' 외' : ''));
+  }
+
+  if (problems.length === 0) {
+    el.restoreReport.className = 'mt-3 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300';
+    el.restoreReport.innerHTML = '복원 완료. 고유명사 ' + r.usedCount + '종을 모두 되돌렸습니다.';
+    toast('복원 완료.');
+  } else {
+    el.restoreReport.className = 'mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200';
+    el.restoreReport.innerHTML = '<p class="mb-1 font-bold">확인이 필요합니다</p><ul class="list-disc space-y-0.5 pl-4">' +
+      problems.map(p => '<li>' + escapeHtml(p) + '</li>').join('') + '</ul>';
+    toast('복원했지만 확인할 점이 있습니다.', 'warn');
+  }
+  el.restoreReport.classList.remove('hidden');
+});
+
+el.copyResult.addEventListener('click', async () => {
+  const ok = await copyToClipboard(el.resultText.value);
+  toast(ok ? '최종 원고를 복사했습니다.' : '복사에 실패했습니다.', ok ? 'ok' : 'error');
+});
+
+/* -----------------------------------------------------------------------------
+   [16] 다크 모드 / 사용법 모달
+   ----------------------------------------------------------------------------- */
+function syncThemeLabel() {
+  const dark = document.documentElement.classList.contains('dark');
+  el.themeLabel.textContent = dark ? '라이트 모드' : '다크 모드';
+}
+el.themeToggle.addEventListener('click', () => {
+  const dark = document.documentElement.classList.toggle('dark');
+  save(STORE.theme, dark ? 'dark' : 'light');
+  syncThemeLabel();
+});
+
+el.helpBtn.addEventListener('click', () => {
+  el.helpModal.classList.remove('hidden');
+  el.helpModal.classList.add('flex');
+});
+function closeHelp() {
+  el.helpModal.classList.add('hidden');
+  el.helpModal.classList.remove('flex');
+}
+el.helpClose.addEventListener('click', closeHelp);
+el.helpModal.addEventListener('click', e => { if (e.target === el.helpModal) closeHelp(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp(); });
+
+/* -----------------------------------------------------------------------------
+   [17] 시작할 때 저장된 내용 복구
+   ----------------------------------------------------------------------------- */
+(function init() {
+  applyOptionsToUI();
+  renderTerms();
+
+  el.sourceText.value  = load(STORE.source, '') || '';
+  el.checkedText.value = load(STORE.checked, '') || '';
+  el.resultText.value  = load(STORE.result, '') || '';
+
+  el.chkStats.textContent = statText(el.checkedText.value);
+  el.resStats.textContent = statText(el.resultText.value);
+
+  renderMap();
+  analyze();
+  syncThemeLabel();
+})();
+</script>
+</body>
+</html>
