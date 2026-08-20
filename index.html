@@ -4,6 +4,15 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>고유명사 지킴이 · 웹소설 맞춤법 검사 도우미</title>
+<meta name="author" content="KUROTONI" />
+<meta name="description" content="웹소설 원고의 고유명사를 보호하면서 맞춤법 검사를 받는 도구. 한국어 조사까지 함께 인식합니다." />
+<!--
+  고유명사 지킴이 (Noun Guard)
+  Copyright (c) 2026 KUROTONI 쿠로토니. All rights reserved.
+
+  개인 사용은 자유입니다. 재배포와 판매는 금지합니다.
+  자세한 내용은 저장소의 LICENSE 파일 또는 페이지 하단의 '이용 약관 전문'을 확인하세요.
+-->
 
 <!-- Tailwind CSS (인터넷 연결 필요) -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -254,9 +263,19 @@
           </div>
         </section>
 
-        <p class="pb-6 text-center text-[11px] text-slate-400 dark:text-slate-600">
-          모든 데이터는 서버로 전송되지 않고 이 브라우저 안에만 저장됩니다.
-        </p>
+        <!-- ---------- 하단 저작권 ---------- -->
+        <footer class="border-t border-slate-200 pb-8 pt-4 text-center dark:border-slate-800">
+          <p class="text-[11px] text-slate-400 dark:text-slate-600">
+            모든 데이터는 서버로 전송되지 않고 이 브라우저 안에만 저장됩니다.
+          </p>
+          <p class="mt-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+            &copy; 2026 KUROTONI 쿠로토니. All rights reserved.
+          </p>
+          <p class="mt-1 text-[11px] text-slate-400 dark:text-slate-600">
+            개인 사용은 자유입니다. 재배포와 판매는 금지합니다.
+            <button id="licenseBtn" class="ml-1 underline underline-offset-2 hover:text-slate-600 dark:hover:text-slate-300">이용 약관 전문</button>
+          </p>
+        </footer>
       </div>
     </main>
   </div>
@@ -289,6 +308,64 @@
       <p class="mt-1 text-rose-700 dark:text-rose-300/80">
         치환표는 이 브라우저에 저장됩니다. 시크릿 창을 닫거나 브라우저 데이터를 지우면 사라지므로, 1단계와 3단계는 되도록 한 번에 마치세요.
       </p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 이용 약관 모달 ===================== -->
+<div id="licenseModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/60 p-4">
+  <div class="thin-scroll max-h-[80vh] w-full max-w-xl overflow-y-auto rounded-xl bg-white p-5 dark:bg-slate-900">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-base font-bold">이용 약관</h2>
+      <button id="licenseClose" class="rounded-md border border-slate-300 px-2 py-1 text-xs dark:border-slate-700">닫기</button>
+    </div>
+
+    <p class="text-sm font-semibold">고유명사 지킴이 (Noun Guard)</p>
+    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+      &copy; 2026 KUROTONI 쿠로토니. All rights reserved.
+    </p>
+    <p class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+      이 소프트웨어는 오픈 소스가 아닙니다. 소스 코드가 공개되어 있으나, 아래 범위를 벗어난 이용은 허락되지 않습니다.
+    </p>
+
+    <div class="mt-4 space-y-3 text-xs leading-relaxed">
+      <div class="rounded-lg bg-emerald-50 p-3 dark:bg-emerald-950/30">
+        <p class="font-bold text-emerald-800 dark:text-emerald-300">허용되는 것</p>
+        <ul class="mt-1 list-disc space-y-1 pl-4 text-emerald-900 dark:text-emerald-200/90">
+          <li>개인적인 용도의 자유로운 사용. 사용료는 없습니다.</li>
+          <li>이 도구로 작업한 원고를 상업적으로 출판하거나 연재하는 것. 결과물의 권리는 전적으로 사용자에게 있습니다.</li>
+          <li>소스 코드 열람, 그리고 본인이 쓸 목적으로 수정해 본인 컴퓨터에서 실행하는 것.</li>
+        </ul>
+      </div>
+
+      <div class="rounded-lg bg-rose-50 p-3 dark:bg-rose-950/30">
+        <p class="font-bold text-rose-800 dark:text-rose-300">금지되는 것</p>
+        <ul class="mt-1 list-disc space-y-1 pl-4 text-rose-900 dark:text-rose-200/90">
+          <li>재배포. 원본이든 수정본이든 전부 또는 일부를 타인에게 배포하거나, 다른 주소에 올려 공개할 수 없습니다.</li>
+          <li>판매, 유료 서비스화, 광고를 붙인 수익화.</li>
+          <li>저작권 표시의 제거 또는 변경.</li>
+          <li>상당 부분을 가져와 다른 이름의 저작물로 공개하는 것.</li>
+        </ul>
+      </div>
+
+      <div>
+        <p class="font-bold">보증의 부인 및 책임의 제한</p>
+        <ul class="mt-1 list-disc space-y-1 pl-4 text-slate-600 dark:text-slate-300">
+          <li>이 소프트웨어는 있는 그대로(AS IS) 제공되며 정확성을 포함한 어떠한 보증도 하지 않습니다.</li>
+          <li>사용 또는 사용 불능으로 발생한 손해에 대해 저작권자는 책임지지 않습니다. 원고 손실, 데이터 유실, 치환과 복원 결과의 오류, 조사 검사 결과의 오류를 포함합니다.</li>
+          <li>데이터는 브라우저 저장소에만 보관됩니다. 브라우저 데이터 삭제나 재설치로 사라질 수 있으니 <b>중요한 원고는 반드시 별도로 백업</b>하십시오.</li>
+          <li>이 소프트웨어는 맞춤법 검사기가 아니며, 외부 맞춤법 검사기의 결과에 대해 책임지지 않습니다.</li>
+        </ul>
+      </div>
+
+      <div>
+        <p class="font-bold">그 밖에</p>
+        <ul class="mt-1 list-disc space-y-1 pl-4 text-slate-600 dark:text-slate-300">
+          <li>이 저장소는 GitHub 공개 저장소이므로 GitHub 이용약관 D.5조에 따라 GitHub 내에서의 열람과 fork는 허용됩니다. 재배포 금지는 그 밖의 모든 배포 행위에 적용됩니다.</li>
+          <li>위 제한을 벗어난 이용을 원하면 저작권자의 사전 서면 허락이 필요합니다.</li>
+          <li>이 약관은 대한민국 법률에 따라 해석됩니다.</li>
+        </ul>
+      </div>
     </div>
   </div>
 </div>
@@ -612,6 +689,7 @@ const el = {
   resultText: $('resultText'), resStats: $('resStats'), copyResult: $('copyResult'),
   themeToggle: $('themeToggle'), themeLabel: $('themeLabel'),
   helpBtn: $('helpBtn'), helpModal: $('helpModal'), helpClose: $('helpClose'),
+  licenseBtn: $('licenseBtn'), licenseModal: $('licenseModal'), licenseClose: $('licenseClose'),
   toast: $('toast')
 };
 
@@ -996,7 +1074,22 @@ function closeHelp() {
 }
 el.helpClose.addEventListener('click', closeHelp);
 el.helpModal.addEventListener('click', e => { if (e.target === el.helpModal) closeHelp(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeHelp(); });
+
+/* 이용 약관 모달 */
+function closeLicense() {
+  el.licenseModal.classList.add('hidden');
+  el.licenseModal.classList.remove('flex');
+}
+el.licenseBtn.addEventListener('click', () => {
+  el.licenseModal.classList.remove('hidden');
+  el.licenseModal.classList.add('flex');
+});
+el.licenseClose.addEventListener('click', closeLicense);
+el.licenseModal.addEventListener('click', e => { if (e.target === el.licenseModal) closeLicense(); });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeHelp(); closeLicense(); }
+});
 
 /* -----------------------------------------------------------------------------
    [17] 시작할 때 저장된 내용 복구
