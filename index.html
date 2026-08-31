@@ -132,6 +132,16 @@
           </span>
         </label>
 
+        <label class="flex cursor-pointer items-start gap-2 py-1.5">
+          <input id="optLines" type="checkbox" class="mt-0.5 h-4 w-4 accent-indigo-600" checked />
+          <span class="text-xs">
+            <span class="font-semibold">줄바꿈 보호 (권장)</span>
+            <span class="block text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+              각 줄 앞에 줄 표시를 넣습니다. 외부 검사기가 줄을 뭉개 놓아도 3단계에서 원래 줄 구조를 그대로 되살립니다.
+            </span>
+          </span>
+        </label>
+
         <label class="mt-2 block text-xs font-semibold">치환 코드 모양</label>
         <select id="optStyle" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-950">
           <option value="full">[[PROTECTED_1]] (기본)</option>
@@ -150,6 +160,24 @@
 
       <div class="mx-auto flex max-w-5xl flex-col gap-5">
 
+        <!-- ---------- 작업 경로 안내 ---------- -->
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div class="rounded-xl border border-emerald-300 bg-emerald-50 p-3 dark:border-emerald-800/70 dark:bg-emerald-950/30">
+            <p class="text-xs font-bold text-emerald-900 dark:text-emerald-300">경로 A · 서식이 하나도 안 깨짐</p>
+            <p class="mt-1 text-[11px] leading-relaxed text-emerald-800 dark:text-emerald-200/80">
+              1단계에 원고를 넣으면 사이트가 바로 검사합니다. 교정하고 <b>원고 복사</b>를 누르면 끝입니다.
+              외부 사이트를 거치지 않으므로 줄바꿈과 대사가 그대로 유지됩니다.
+            </p>
+          </div>
+          <div class="rounded-xl border border-indigo-300 bg-indigo-50 p-3 dark:border-indigo-800/70 dark:bg-indigo-950/30">
+            <p class="text-xs font-bold text-indigo-900 dark:text-indigo-300">경로 B · 외부 검사기까지 활용</p>
+            <p class="mt-1 text-[11px] leading-relaxed text-indigo-800 dark:text-indigo-200/80">
+              1 → 2 → 3단계를 거칩니다. <b>줄바꿈 보호</b>가 켜져 있으면 외부 검사기가 줄을 뭉개도
+              3단계에서 원래 줄 구조를 그대로 되살립니다.
+            </p>
+          </div>
+        </div>
+
         <!-- ---------- STEP 1 : 원본 ---------- -->
         <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -159,25 +187,37 @@
             </h2>
             <div class="flex items-center gap-2">
               <span id="srcStats" class="text-[11px] text-slate-500 dark:text-slate-400"></span>
+              <button id="copySource" class="rounded-md border border-slate-300 px-2 py-1 text-[11px] font-semibold hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">원고 복사</button>
               <button id="clearSource" class="rounded-md border border-slate-300 px-2 py-1 text-[11px] hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">비우기</button>
             </div>
           </div>
 
-          <textarea id="sourceText" rows="12" placeholder="여기에 원고를 붙여넣으세요."
+          <textarea id="sourceText" rows="14" placeholder="여기에 원고를 붙여넣으세요. 줄바꿈과 대사 서식은 그대로 유지됩니다."
                     class="thin-scroll w-full resize-y rounded-lg border border-slate-300 bg-white p-3 text-sm outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950"></textarea>
 
-          <!-- 조사 검사 결과 -->
-          <div id="warnBox" class="mt-3 hidden rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-800/70 dark:bg-amber-950/30">
-            <div class="mb-2 flex items-center justify-between gap-2">
-              <h3 class="text-xs font-bold text-amber-900 dark:text-amber-200">
-                조사 확인 필요 <span id="warnCount"></span>
+          <!-- ===== 사이트 내장 검사 결과 ===== -->
+          <div id="issueBox" class="mt-3 hidden rounded-lg border border-slate-300 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-950/50">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-xs font-bold">
+                검사 결과 <span id="issueCount" class="text-slate-500 dark:text-slate-400"></span>
               </h3>
-              <button id="fixAllBtn" class="rounded-md bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-amber-500">모두 교정</button>
+              <button id="fixAllBtn" class="rounded-md bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-amber-500">확실한 오류 모두 교정</button>
             </div>
-            <ul id="warnList" class="thin-scroll max-h-52 space-y-1.5 overflow-y-auto text-xs"></ul>
-            <p class="mt-2 text-[11px] leading-snug text-amber-800/80 dark:text-amber-300/70">
-              고유명사의 받침에 맞는 조사인지 앱이 직접 검사한 결과입니다. 맞춤법 검사기는 등록되지 않은 이름의 조사를 판단하지 못하므로, 이 검사를 먼저 통과시키는 것이 좋습니다.
+
+            <!-- 분류 필터 -->
+            <div id="issueTabs" class="mb-2 flex flex-wrap gap-1"></div>
+
+            <ul id="issueList" class="thin-scroll max-h-72 space-y-1.5 overflow-y-auto text-xs"></ul>
+
+            <p class="mt-2 text-[11px] leading-snug text-slate-500 dark:text-slate-400">
+              이 검사는 브라우저 안에서 실행되므로 <b>줄바꿈과 대사 서식이 전혀 손상되지 않습니다.</b>
+              자주 틀리는 표현과 고유명사 조사를 잡아 주지만, 전문 맞춤법 검사기만큼 넓게 보지는 못합니다.
+              더 꼼꼼히 보려면 아래 2·3단계의 외부 검사기를 함께 쓰세요.
             </p>
+          </div>
+
+          <div id="issueClean" class="mt-3 hidden rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
+            내장 검사에서 발견된 문제가 없습니다.
           </div>
 
           <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -288,14 +328,32 @@
       <h2 class="text-base font-bold">사용법</h2>
       <button id="helpClose" class="rounded-md border border-slate-300 px-2 py-1 text-xs dark:border-slate-700">닫기</button>
     </div>
-    <ol class="list-decimal space-y-2 pl-5 text-sm leading-relaxed">
+    <p class="mb-2 text-sm font-bold">경로 A · 사이트 안에서만 (서식이 안 깨짐)</p>
+    <ol class="mb-4 list-decimal space-y-2 pl-5 text-sm leading-relaxed">
       <li>왼쪽 사전에 인물 이름, 지명, 세계관 용어를 등록합니다.</li>
-      <li>1단계에 원고를 붙여넣습니다. 조사가 잘못된 곳이 있으면 노란 상자로 알려 줍니다. 필요하면 '고치기'를 눌러 바로잡습니다.</li>
+      <li>1단계에 원고를 붙여넣으면 바로 검사가 돌아갑니다. 조사, 맞춤법, 띄어쓰기, 문장부호를 분류해 보여 줍니다.</li>
+      <li>'고치기'로 하나씩, 또는 '확실한 오류 모두 교정'으로 한 번에 바로잡습니다.</li>
+      <li>오른쪽 위 <b>원고 복사</b>를 누르면 끝입니다. 외부 사이트를 거치지 않으므로 줄바꿈과 대사가 그대로입니다.</li>
+    </ol>
+
+    <p class="mb-2 text-sm font-bold">경로 B · 외부 검사기까지 쓰기</p>
+    <ol class="list-decimal space-y-2 pl-5 text-sm leading-relaxed">
+      <li>경로 A를 먼저 끝냅니다.</li>
       <li>'고유명사 숨기기' 버튼을 누르면 이름이 치환 코드로 바뀌고 클립보드에 자동 복사됩니다.</li>
       <li>2단계의 검사기 링크를 열어 붙여넣고 맞춤법 검사를 받습니다.</li>
-      <li>고쳐진 글을 복사해 3단계에 붙여넣고 '되돌리기'를 누르면 원래 이름이 돌아옵니다.</li>
+      <li>고쳐진 글을 복사해 3단계에 붙여넣고 '되돌리기'를 누릅니다. 이름과 <b>줄 구조가 함께</b> 원래대로 돌아옵니다.</li>
       <li>'최종 원고 복사하기'로 마무리합니다.</li>
     </ol>
+
+    <div class="mt-4 rounded-lg bg-slate-100 p-3 text-xs leading-relaxed dark:bg-slate-800">
+      <p class="font-semibold">줄바꿈이 사라지는 문제</p>
+      <p class="mt-1 text-slate-600 dark:text-slate-300">
+        외부 맞춤법 검사기는 결과를 돌려줄 때 줄바꿈을 없애 원고를 줄글로 만들어 버리는 경우가 있습니다.
+        그래서 치환할 때 각 줄 앞에 <code>[[L1]]</code> 같은 줄 표시를 함께 넣습니다.
+        검사기가 줄을 다 뭉개 놓아도 3단계에서 이 표시를 기준으로 원래 줄 구조를 정확히 되살립니다.
+        빈 줄과 들여쓰기도 그대로 복구됩니다.
+      </p>
+    </div>
     <div class="mt-4 rounded-lg bg-slate-100 p-3 text-xs leading-relaxed dark:bg-slate-800">
       <p class="font-semibold">왜 조사까지 숨기나요?</p>
       <p class="mt-1 text-slate-600 dark:text-slate-300">
@@ -487,14 +545,219 @@ function checkParticle(baseChar, particle) {
 }
 
 /* -----------------------------------------------------------------------------
+   [3-B] 내장 맞춤법 규칙
+
+   외부 검사기를 거치지 않고 브라우저 안에서 바로 검사하기 때문에
+   줄바꿈과 대사 서식이 전혀 손상되지 않습니다.
+
+   규칙을 추가하려면 아래 SPELL_RULES 배열에 한 줄 넣으면 됩니다.
+     re    : 찾을 표현 (정규식, g 플래그 필수)
+     to    : 바꿀 표현 ($1, $2 로 괄호 안 내용을 다시 쓸 수 있습니다)
+     why   : 사용자에게 보여 줄 설명
+     level : 'high'  = 확실한 오류 ('모두 교정' 대상)
+             'check' = 문맥에 따라 다름 (직접 확인하고 고치는 항목)
+     tag   : '맞춤법' | '띄어쓰기' | '문장부호'
+   ----------------------------------------------------------------------------- */
+const SPELL_RULES = [
+  /* ---- 맞춤법: 항상 틀린 표기 ---- */
+  { re: /됬/g,        to: '됐',    why: "'됬'은 없는 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /됫/g,        to: '됐',    why: "'됫'은 없는 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /되요/g,      to: '돼요',  why: "'되어요'의 준말은 '돼요'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /되서/g,      to: '돼서',  why: "'되어서'의 준말은 '돼서'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /않되/g,      to: '안 되', why: "'아니 되다'의 뜻이므로 '안 되다'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /않하/g,      to: '안 하', why: "'아니 하다'의 뜻이므로 '안 하다'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /뵈요/g,      to: '봬요',  why: "'뵈어요'의 준말은 '봬요'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /몇일/g,      to: '며칠',  why: "'며칠'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /오랫만/g,    to: '오랜만', why: "'오랜만'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /금새/g,      to: '금세',  why: "'금세'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /설레임/g,    to: '설렘',  why: "'설레다'의 명사형은 '설렘'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /어떻해/g,    to: '어떡해', why: "'어떻게 해'의 준말은 '어떡해'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /어떡게/g,    to: '어떻게', why: "'어떻게'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /역활/g,      to: '역할',  why: "'역할'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /희안/g,      to: '희한',  why: "'희한하다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /승락/g,      to: '승낙',  why: "'승낙'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /곱배기/g,    to: '곱빼기', why: "'곱빼기'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /눈쌀/g,      to: '눈살',  why: "'눈살을 찌푸리다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /넓직/g,      to: '널찍',  why: "'널찍하다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /짜집기/g,    to: '짜깁기', why: "'짜깁기'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /통채로/g,    to: '통째로', why: "'통째로'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /널부러/g,    to: '널브러', why: "'널브러지다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /부시시/g,    to: '부스스', why: "'부스스하다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /안스러/g,    to: '안쓰러', why: "'안쓰럽다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /챙피/g,      to: '창피',  why: "'창피하다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /서슴치/g,    to: '서슴지', why: "'서슴지 않다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /폭팔/g,      to: '폭발',  why: "'폭발'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /뇌졸증/g,    to: '뇌졸중', why: "'뇌졸중'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /웬지/g,      to: '왠지',  why: "'왜인지'의 준말이므로 '왠지'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /왠만/g,      to: '웬만',  why: "'웬만하다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /왠일/g,      to: '웬일',  why: "'웬일'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /읍니다/g,    to: '습니다', why: "'-습니다'가 현행 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /슴니다/g,    to: '습니다', why: "'-습니다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /([있없했])슴/g, to: '$1음', why: "명사형 어미는 '-음'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /구지/g,      to: '굳이',  why: "'굳이'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /설겆이/g,    to: '설거지', why: "'설거지'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /닥달/g,      to: '닦달',  why: "'닦달하다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /움추/g,      to: '움츠',  why: "'움츠리다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /추스리/g,    to: '추스르', why: "'추스르다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /치뤘/g,      to: '치렀',  why: "'치르다'의 활용은 '치렀다'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /치뤄/g,      to: '치러',  why: "'치르다'의 활용은 '치러'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /멋적/g,      to: '멋쩍',  why: "'멋쩍다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /맞딱/g,      to: '맞닥',  why: "'맞닥뜨리다'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /발자욱/g,    to: '발자국', why: "'발자국'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /댓가/g,      to: '대가',  why: "'대가'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /촛점/g,      to: '초점',  why: "'초점'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /갯수/g,      to: '개수',  why: "'개수'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /뒷굼치/g,    to: '뒤꿈치', why: "'뒤꿈치'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /구렛나루/g,  to: '구레나룻', why: "'구레나룻'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /절대절명/g,  to: '절체절명', why: "'절체절명'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /유래없/g,    to: '유례없', why: "'전례가 없다'는 뜻은 '유례없다'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /제작년/g,    to: '재작년', why: "'재작년'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /웅큼/g,      to: '움큼',  why: "'움큼'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /삼가하/g,    to: '삼가',  why: "'삼가다'가 기본형이므로 '삼가 주세요'입니다.", level: 'high', tag: '맞춤법' },
+  { re: /임마/g,      to: '인마',  why: "'인마'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /뒤치닥/g,    to: '뒤치다꺼', why: "'뒤치다꺼리'가 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /횡경막/g,    to: '횡격막', why: "'횡격막'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+  { re: /되물림/g,    to: '대물림', why: "'대물림'이 바른 표기입니다.", level: 'high', tag: '맞춤법' },
+
+  /* ---- 맞춤법: 문맥을 확인해야 하는 것 ---- */
+  { re: /바램/g,      to: '바람',  why: "소망의 뜻이면 '바람'입니다. 색이 바랜다는 뜻이면 그대로 두세요.", level: 'check', tag: '맞춤법' },
+  { re: /문안하/g,    to: '무난하', why: "'무난하다'의 오타일 수 있습니다. 안부를 묻는 '문안'이면 그대로 두세요.", level: 'check', tag: '맞춤법' },
+  { re: /를 띄우?고/g, to: '를 띠고', why: "표정이나 빛을 나타내면 '띠다'입니다.", level: 'check', tag: '맞춤법' },
+  { re: /((?:있|없|하|되|보|가|오)[다는])?던지/g, to: null, why: "과거 회상이면 '-던지', 선택이면 '-든지'입니다.", level: 'check', tag: '맞춤법' },
+
+  /* ---- 문장부호 ---- */
+  { re: /\.{2,}/g,    to: '…',    why: "말줄임표는 '…' 기호를 씁니다.", level: 'check', tag: '문장부호' },
+  { re: /…{3,}/g,     to: '……',   why: "말줄임표는 하나 또는 둘까지만 씁니다.", level: 'check', tag: '문장부호' },
+  { re: /!{2,}/g,     to: '!',    why: "느낌표가 겹쳤습니다.", level: 'check', tag: '문장부호' },
+  { re: /\?{2,}/g,    to: '?',    why: "물음표가 겹쳤습니다.", level: 'check', tag: '문장부호' },
+  { re: /(\S)([,.!?])(?=[가-힣A-Za-z])/g, to: '$1$2 ', why: "문장부호 뒤에 공백이 없습니다.", level: 'check', tag: '문장부호' },
+  { re: /(\S)[ \t]{2,}(\S)/g, to: '$1 $2', why: "공백이 두 칸 이상 이어집니다.", level: 'high', tag: '문장부호' },
+  { re: /[ \t]+$/gm,  to: '',     why: "줄 끝에 불필요한 공백이 있습니다.", level: 'high', tag: '문장부호' }
+];
+
+/* 정규식 하나로 찾은 부분을 실제로 어떻게 바꿀지 계산합니다. */
+SPELL_RULES.forEach(r => { r._single = new RegExp(r.re.source); });
+
+/* 의존명사 띄어쓰기 검사.
+   관형형 '-ㄹ' 뒤에 오는 '수, 것, 뿐, 만큼, 때'는 띄어 써야 합니다.
+   '실수', '별수'처럼 붙여 쓰는 낱말은 아래 예외 목록으로 걸러 냅니다. */
+/*  next       : 뒤에 이것이 와야 의존명사로 인정합니다.
+    spaceAfter : 뒤에 오는 것이 '조사'면 붙여 써야 하고, '용언'이면 띄어 써야 합니다.
+                 true = 항상 띄움, 정규식 = 조건이 맞을 때만 띄움, false = 띄우지 않음.
+                 (예: '울 뿐이다'는 붙이고, '울 뿐 아니라'는 띄웁니다) */
+const BOUND_NOUNS = [
+  { word: '수',   next: /^(있|없)/, spaceAfter: true, level: 'high',  exc: ['실수', '별수', '술수', '물수'] },
+  { word: '것',   next: /^(같|이|을|은|도|만|처럼)/, spaceAfter: /^같/, level: 'high', exc: [] },
+  { word: '뿐',   next: /^(이|만|아니)/, spaceAfter: /^아니/, level: 'high', exc: [] },
+  { word: '만큼', next: null, spaceAfter: false, level: 'high', exc: [] },
+  { word: '때',   next: /^(가|는|에|도|만|부터|까지|였|이)/, spaceAfter: false, level: 'check', exc: ['물때', '썰때'] }
+];
+
+function scanBoundNouns(text, push) {
+  BOUND_NOUNS.forEach(bn => {
+    // 의존명사 뒤에 붙은 공백까지 함께 잡아야 '할수있다' → '할 수 있다' 로 온전히 고쳐집니다.
+    const re = new RegExp('([가-힣])' + bn.word + '([ \\t]*)', 'g');
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const head = m[1];
+      const gap = m[2];
+      if (getJong(head) !== 8) continue;                   // 'ㄹ' 받침 뒤에서만
+      if (bn.exc.indexOf(head + bn.word) !== -1) continue;  // 한 낱말인 경우 제외
+
+      const after = text.slice(m.index + m[0].length);
+      if (bn.word === '때' && after.charAt(0) === '문') continue; // '때문'은 붙여 씁니다
+      if (bn.next && !bn.next.test(after)) continue;
+
+      // 앞은 무조건 띄웁니다. 뒤는 용언이 이어질 때만 띄우고, 조사가 오면 붙입니다.
+      const needSpace = bn.spaceAfter === true ? true
+                      : (bn.spaceAfter ? bn.spaceAfter.test(after) : false);
+      const tail = gap.length > 0 ? gap : (needSpace && after.length > 0 ? ' ' : '');
+      push({
+        start: m.index,
+        end: m.index + m[0].length,
+        from: m[0],
+        to: head + ' ' + bn.word + tail,
+        why: "관형형 '-ㄹ' 뒤의 '" + bn.word + "'은(는) 띄어 씁니다.",
+        level: bn.level,
+        tag: '띄어쓰기'
+      });
+    }
+  });
+}
+
+/* 큰따옴표 짝이 맞는지 줄 단위로 확인합니다. (자동 교정은 하지 않습니다) */
+function scanQuotes(text, push) {
+  let offset = 0;
+  text.split('\n').forEach((line, i) => {
+    const count = (line.match(/["“”]/g) || []).length;
+    if (count % 2 === 1) {
+      push({
+        start: offset, end: offset + line.length,
+        from: line.length > 24 ? line.slice(0, 24) + '…' : line,
+        to: null,
+        why: (i + 1) + '번째 줄의 큰따옴표 개수가 홀수입니다. 대사가 닫히지 않았는지 확인하세요.',
+        level: 'check', tag: '문장부호'
+      });
+    }
+    offset += line.length + 1;
+  });
+}
+
+/* 원고 전체를 검사해 문제 목록을 만듭니다.
+   고유명사로 등록된 구간은 검사에서 제외합니다. (인물 이름이 오류로 잡히지 않도록) */
+function runSpellCheck(text, protectedRanges) {
+  const found = [];
+  const push = item => found.push(item);
+
+  function overlapsProtected(start, end) {
+    for (let i = 0; i < protectedRanges.length; i++) {
+      if (start < protectedRanges[i].end && end > protectedRanges[i].start) return true;
+    }
+    return false;
+  }
+
+  SPELL_RULES.forEach(rule => {
+    if (rule.to === null) return; // 설명만 있는 규칙은 건너뜁니다
+    rule.re.lastIndex = 0;
+    let m;
+    let guard = 0;
+    while ((m = rule.re.exec(text)) !== null && guard++ < 2000) {
+      if (m[0].length === 0) { rule.re.lastIndex++; continue; }
+      const start = m.index, end = m.index + m[0].length;
+      if (!overlapsProtected(start, end)) {
+        push({
+          start: start, end: end, from: m[0],
+          to: m[0].replace(rule._single, rule.to),
+          why: rule.why, level: rule.level, tag: rule.tag
+        });
+      }
+    }
+  });
+
+  scanBoundNouns(text, item => { if (!overlapsProtected(item.start, item.end)) push(item); });
+  scanQuotes(text, push);
+
+  // 위치 순으로 정렬하고, 서로 겹치는 항목은 앞의 것만 남깁니다.
+  found.sort((a, b) => a.start - b.start || b.level.localeCompare(a.level));
+  const result = [];
+  let lastEnd = -1;
+  found.forEach(f => {
+    if (f.to === null) { result.push(f); return; }   // 알림 전용 항목은 겹침 검사 제외
+    if (f.start >= lastEnd) { result.push(f); lastEnd = f.end; }
+  });
+  return result;
+}
+
+/* -----------------------------------------------------------------------------
    [4] 상태값
    ----------------------------------------------------------------------------- */
 const state = {
   terms: load(STORE.terms, []),
-  options: Object.assign({ boundary: true, withParticle: true, style: 'full' }, load(STORE.options, {})),
-  mapping: load(STORE.mapping, null),  // { createdAt, style, items:[{id, full, term, tail, count}] }
+  options: Object.assign({ boundary: true, withParticle: true, style: 'full', lines: true }, load(STORE.options, {})),
+  mapping: load(STORE.mapping, null),  // { createdAt, style, items:[...], lines:{count, indents} }
   occurrences: [],
-  warnings: []
+  issues: [],        // 조사 + 맞춤법 + 띄어쓰기 + 문장부호를 합친 목록
+  issueFilter: '전체'
 };
 
 /* 짧은 이름이 긴 이름을 잘라먹지 않도록 항상 긴 것부터 찾습니다. */
@@ -582,13 +845,13 @@ function collectWarnings(text, occ) {
     const correct = checkParticle(baseChar, o.particle);
     if (correct) {
       list.push({
-        index: k,
-        pStart: o.pStart,
-        pEnd: o.pEnd,
-        base: o.term + o.suffix,
-        current: o.particle,
-        correct: correct,
-        context: text.slice(Math.max(0, o.start - 8), Math.min(text.length, o.pEnd + 8))
+        start: o.pStart,
+        end: o.pEnd,
+        from: o.particle,
+        to: correct,
+        why: '‘' + (o.term + o.suffix) + '’ 뒤에 붙는 조사입니다.',
+        level: 'high',
+        tag: '조사'
       });
     }
   }
@@ -624,6 +887,52 @@ function buildMasked(text, occ, style) {
   }
   out += text.slice(last);
   return { text: out, items: items };
+}
+
+/* 줄바꿈 보호.
+   각 줄 앞에 [[L1]], [[L2]] ... 표시를 붙입니다.
+   외부 검사기가 줄바꿈을 없애 버려도, 이 표시를 기준으로 원래 줄 구조를 되살립니다.
+   들여쓰기(줄 앞 공백)는 표시에 넣지 않고 따로 보관했다가 복원할 때 다시 붙입니다. */
+function addLineMarks(text) {
+  const lines = text.split('\n');
+  const indents = lines.map(l => (l.match(/^[ \t]*/) || [''])[0]);
+  const marked = lines.map((l, i) => '[[L' + (i + 1) + ']]' + l.slice(indents[i].length)).join('\n');
+  return { text: marked, info: { count: lines.length, indents: indents } };
+}
+
+const RE_LINEMARK = /\[\s*\[\s*L\s*(\d+)\s*\]\s*\]/gi;
+
+function restoreLines(text, info) {
+  const marks = [];
+  RE_LINEMARK.lastIndex = 0;
+  let m;
+  while ((m = RE_LINEMARK.exec(text)) !== null) {
+    marks.push({ n: Number(m[1]), start: m.index, end: m.index + m[0].length });
+  }
+  if (marks.length === 0) {
+    return { text: text, found: 0, missing: [], applied: false };
+  }
+
+  // 표시와 표시 사이의 글이 그 줄의 내용입니다.
+  const segs = new Map();
+  for (let i = 0; i < marks.length; i++) {
+    const from = marks[i].end;
+    const to = (i + 1 < marks.length) ? marks[i + 1].start : text.length;
+    segs.set(marks[i].n, text.slice(from, to));
+  }
+
+  const out = [];
+  const missing = [];
+  for (let n = 1; n <= info.count; n++) {
+    if (segs.has(n)) {
+      const body = segs.get(n).replace(/^[\s ]+/, '').replace(/[\s ]+$/, '');
+      out.push((info.indents[n - 1] || '') + body);
+    } else {
+      // 표시가 사라진 줄. 그 줄 내용은 앞줄에 붙어 있으므로 버리지 않고 넘어갑니다.
+      missing.push(n);
+    }
+  }
+  return { text: out.join('\n'), found: marks.length, missing: missing, applied: true };
 }
 
 /* 검사기가 코드 안에 공백을 넣거나 대괄호를 하나 지우는 경우까지 감안한 되돌리기 규칙 */
@@ -678,9 +987,10 @@ const el = {
   termInput: $('termInput'), termAddBtn: $('termAddBtn'), termChips: $('termChips'), termCount: $('termCount'),
   bulkToggle: $('bulkToggle'), bulkBox: $('bulkBox'), bulkArea: $('bulkArea'), bulkApply: $('bulkApply'),
   clearTerms: $('clearTerms'), exportTerms: $('exportTerms'), importTerms: $('importTerms'),
-  optBoundary: $('optBoundary'), optParticle: $('optParticle'), optStyle: $('optStyle'),
-  sourceText: $('sourceText'), srcStats: $('srcStats'), clearSource: $('clearSource'),
-  warnBox: $('warnBox'), warnList: $('warnList'), warnCount: $('warnCount'), fixAllBtn: $('fixAllBtn'),
+  optBoundary: $('optBoundary'), optParticle: $('optParticle'), optStyle: $('optStyle'), optLines: $('optLines'),
+  sourceText: $('sourceText'), srcStats: $('srcStats'), clearSource: $('clearSource'), copySource: $('copySource'),
+  issueBox: $('issueBox'), issueList: $('issueList'), issueCount: $('issueCount'),
+  issueTabs: $('issueTabs'), issueClean: $('issueClean'), fixAllBtn: $('fixAllBtn'),
   maskBtn: $('maskBtn'), hitInfo: $('hitInfo'),
   maskedText: $('maskedText'), maskStats: $('maskStats'), copyMasked: $('copyMasked'),
   mapToggle: $('mapToggle'), mapBox: $('mapBox'), mapBody: $('mapBody'), mapMeta: $('mapMeta'),
@@ -835,17 +1145,20 @@ el.importTerms.addEventListener('change', e => {
 function applyOptionsToUI() {
   el.optBoundary.checked = state.options.boundary;
   el.optParticle.checked = state.options.withParticle;
+  el.optLines.checked = state.options.lines;
   el.optStyle.value = state.options.style;
 }
 function readOptionsFromUI() {
   state.options.boundary = el.optBoundary.checked;
   state.options.withParticle = el.optParticle.checked;
+  state.options.lines = el.optLines.checked;
   state.options.style = el.optStyle.value;
   save(STORE.options, state.options);
   analyze();
 }
 el.optBoundary.addEventListener('change', readOptionsFromUI);
 el.optParticle.addEventListener('change', readOptionsFromUI);
+el.optLines.addEventListener('change', readOptionsFromUI);
 el.optStyle.addEventListener('change', readOptionsFromUI);
 
 /* -----------------------------------------------------------------------------
@@ -862,62 +1175,133 @@ function analyze() {
   el.srcStats.textContent = statText(text);
 
   state.occurrences = findOccurrences(text);
-  state.warnings = collectWarnings(text, state.occurrences);
+
+  // 조사 검사 + 맞춤법/띄어쓰기/문장부호 검사를 하나의 목록으로 합칩니다.
+  const particleIssues = collectWarnings(text, state.occurrences);
+  const spellIssues = runSpellCheck(text, state.occurrences);
+  state.issues = particleIssues.concat(spellIssues).sort((a, b) => a.start - b.start);
 
   const uniqueTerms = new Set(state.occurrences.map(o => o.term));
   el.hitInfo.textContent = state.occurrences.length === 0
     ? (state.terms.length === 0 ? '먼저 왼쪽에 고유명사를 등록하세요.' : '원고에서 찾은 고유명사가 없습니다.')
     : '고유명사 ' + uniqueTerms.size + '종, 총 ' + state.occurrences.length + '곳을 찾았습니다.';
 
-  renderWarnings();
+  renderIssues();
 }
 
-function renderWarnings() {
-  if (state.warnings.length === 0) {
-    el.warnBox.classList.add('hidden');
-    el.warnList.innerHTML = '';
+/* 분류별 개수를 세어 필터 버튼을 만듭니다. */
+const TAG_ORDER = ['조사', '맞춤법', '띄어쓰기', '문장부호'];
+
+function renderIssues() {
+  const text = el.sourceText.value;
+
+  if (state.issues.length === 0) {
+    el.issueBox.classList.add('hidden');
+    el.issueList.innerHTML = '';
+    el.issueClean.classList.toggle('hidden', text.trim().length === 0);
     return;
   }
-  el.warnBox.classList.remove('hidden');
-  el.warnCount.textContent = state.warnings.length + '곳';
-  el.warnList.innerHTML = state.warnings.map((w, i) =>
-    '<li class="flex items-start justify-between gap-2 rounded-md bg-white/70 px-2 py-1.5 dark:bg-slate-900/60">' +
-      '<div class="min-w-0">' +
-        '<span class="block truncate text-slate-700 dark:text-slate-200">…' + escapeHtml(w.context) + '…</span>' +
-        '<span class="block text-[11px] text-slate-500 dark:text-slate-400">' +
-          '‘' + escapeHtml(w.base) + '’ 뒤 조사는 ' +
-          '<b class="text-amber-700 dark:text-amber-300">‘' + escapeHtml(w.correct) + '’</b>' +
-          ' (현재 ‘' + escapeHtml(w.current) + '’)' +
-        '</span>' +
-      '</div>' +
-      '<button data-warn="' + i + '" class="warn-fix shrink-0 rounded-md border border-amber-500 px-2 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/40">고치기</button>' +
-    '</li>'
-  ).join('');
+  el.issueClean.classList.add('hidden');
+  el.issueBox.classList.remove('hidden');
+
+  const highCount = state.issues.filter(i => i.level === 'high').length;
+  el.issueCount.textContent = '총 ' + state.issues.length + '건 (확실한 오류 ' + highCount + '건)';
+  el.fixAllBtn.classList.toggle('hidden', highCount === 0);
+
+  // 필터 버튼
+  const counts = {};
+  state.issues.forEach(i => { counts[i.tag] = (counts[i.tag] || 0) + 1; });
+  const tags = ['전체'].concat(TAG_ORDER.filter(t => counts[t]));
+  if (tags.indexOf(state.issueFilter) === -1) state.issueFilter = '전체';
+
+  el.issueTabs.innerHTML = tags.map(t => {
+    const n = t === '전체' ? state.issues.length : counts[t];
+    const on = t === state.issueFilter;
+    return '<button data-tag="' + escapeHtml(t) + '" class="issue-tab rounded-full px-2.5 py-1 text-[11px] font-semibold ' +
+      (on ? 'bg-indigo-600 text-white'
+          : 'border border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800') +
+      '">' + escapeHtml(t) + ' ' + n + '</button>';
+  }).join('');
+
+  // 목록
+  const shown = state.issues
+    .map((it, idx) => ({ it: it, idx: idx }))
+    .filter(x => state.issueFilter === '전체' || x.it.tag === state.issueFilter)
+    .slice(0, 300);
+
+  el.issueList.innerHTML = shown.map(x => {
+    const it = x.it;
+    const ctx = text.slice(Math.max(0, it.start - 10), Math.min(text.length, it.end + 10)).replace(/\n/g, ' ');
+    const isHigh = it.level === 'high';
+    const badge = isHigh
+      ? '<span class="shrink-0 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:bg-rose-950 dark:text-rose-300">오류</span>'
+      : '<span class="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950 dark:text-amber-300">확인</span>';
+    const tagChip = '<span class="shrink-0 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">' + escapeHtml(it.tag) + '</span>';
+
+    const change = it.to === null ? ''
+      : '<span class="block text-[11px] text-slate-500 dark:text-slate-400">' +
+          '<span class="text-rose-600 line-through dark:text-rose-400">' + escapeHtml(it.from) + '</span>' +
+          ' → <b class="text-emerald-700 dark:text-emerald-400">' + escapeHtml(it.to) + '</b>' +
+        '</span>';
+
+    const btn = it.to === null ? ''
+      : '<button data-issue="' + x.idx + '" class="issue-fix shrink-0 rounded-md border border-indigo-500 px-2 py-1 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 dark:text-indigo-300 dark:hover:bg-indigo-900/40">고치기</button>';
+
+    return '<li class="flex items-start justify-between gap-2 rounded-md bg-white px-2 py-1.5 dark:bg-slate-900">' +
+        '<div class="min-w-0">' +
+          '<div class="mb-0.5 flex flex-wrap items-center gap-1">' + badge + tagChip +
+            '<span class="truncate text-slate-700 dark:text-slate-200">…' + escapeHtml(ctx) + '…</span>' +
+          '</div>' +
+          change +
+          '<span class="block text-[11px] text-slate-400 dark:text-slate-500">' + escapeHtml(it.why) + '</span>' +
+        '</div>' + btn +
+      '</li>';
+  }).join('');
+
+  if (shown.length < state.issues.filter(i => state.issueFilter === '전체' || i.tag === state.issueFilter).length) {
+    el.issueList.innerHTML += '<li class="px-2 py-1 text-[11px] text-slate-400">이 외에도 더 있습니다. 위쪽부터 고쳐 나가면 나머지가 이어서 표시됩니다.</li>';
+  }
 }
 
-el.warnList.addEventListener('click', e => {
-  const btn = e.target.closest('.warn-fix');
+/* 필터 버튼 */
+el.issueTabs.addEventListener('click', e => {
+  const btn = e.target.closest('.issue-tab');
   if (!btn) return;
-  const w = state.warnings[Number(btn.getAttribute('data-warn'))];
-  if (!w) return;
-  const text = el.sourceText.value;
-  el.sourceText.value = text.slice(0, w.pStart) + w.correct + text.slice(w.pEnd);
-  save(STORE.source, el.sourceText.value);
-  analyze();
-  toast('조사를 ‘' + w.correct + '’ 으로 고쳤습니다.');
+  state.issueFilter = btn.getAttribute('data-tag');
+  renderIssues();
 });
 
+/* 개별 교정 */
+el.issueList.addEventListener('click', e => {
+  const btn = e.target.closest('.issue-fix');
+  if (!btn) return;
+  const it = state.issues[Number(btn.getAttribute('data-issue'))];
+  if (!it || it.to === null) return;
+  const text = el.sourceText.value;
+  el.sourceText.value = text.slice(0, it.start) + it.to + text.slice(it.end);
+  save(STORE.source, el.sourceText.value);
+  analyze();
+  toast('‘' + it.from.trim() + '’ 을(를) ‘' + it.to.trim() + '’ 로 고쳤습니다.');
+});
+
+/* 확실한 오류만 한 번에 교정 */
 el.fixAllBtn.addEventListener('click', () => {
-  if (state.warnings.length === 0) return;
-  const count = state.warnings.length;
+  const targets = state.issues.filter(i => i.level === 'high' && i.to !== null);
+  if (targets.length === 0) { toast('자동으로 고칠 항목이 없습니다.', 'warn'); return; }
   let text = el.sourceText.value;
   // 뒤에서부터 고쳐야 앞쪽 위치가 밀리지 않습니다.
-  const sorted = state.warnings.slice().sort((a, b) => b.pStart - a.pStart);
-  sorted.forEach(w => { text = text.slice(0, w.pStart) + w.correct + text.slice(w.pEnd); });
+  targets.slice().sort((a, b) => b.start - a.start)
+    .forEach(it => { text = text.slice(0, it.start) + it.to + text.slice(it.end); });
   el.sourceText.value = text;
   save(STORE.source, text);
   analyze();
-  toast(count + '곳의 조사를 고쳤습니다.');
+  toast(targets.length + '곳을 고쳤습니다.');
+});
+
+/* 검사와 교정이 끝난 원고를 그대로 복사 (서식 손상 없음) */
+el.copySource.addEventListener('click', async () => {
+  const ok = await copyToClipboard(el.sourceText.value);
+  toast(ok ? '원고를 복사했습니다. 줄바꿈과 서식이 그대로 유지됩니다.' : '복사에 실패했습니다.', ok ? 'ok' : 'error');
 });
 
 el.sourceText.addEventListener('input', () => {
@@ -941,26 +1325,38 @@ el.maskBtn.addEventListener('click', async () => {
   if (state.terms.length === 0) { toast('왼쪽에 고유명사를 먼저 등록하세요.', 'warn'); return; }
 
   analyze();
-  if (state.occurrences.length === 0) {
+  if (state.occurrences.length === 0 && !state.options.lines) {
     toast('원고에서 등록된 고유명사를 찾지 못했습니다.', 'warn');
     return;
   }
 
   const built = buildMasked(text, state.occurrences, state.options.style);
-  el.maskedText.value = built.text;
-  el.maskStats.textContent = statText(built.text);
+
+  // 줄바꿈 보호: 각 줄 앞에 줄 표시를 붙입니다.
+  let outText = built.text;
+  let lineInfo = null;
+  if (state.options.lines) {
+    const marked = addLineMarks(outText);
+    outText = marked.text;
+    lineInfo = marked.info;
+  }
+
+  el.maskedText.value = outText;
+  el.maskStats.textContent = statText(outText);
 
   state.mapping = {
     createdAt: new Date().toISOString(),
     style: state.options.style,
-    items: built.items
+    items: built.items,
+    lines: lineInfo
   };
   save(STORE.mapping, state.mapping);
   renderMap();
 
-  const ok = await copyToClipboard(built.text);
+  const ok = await copyToClipboard(outText);
+  const extra = lineInfo ? ' 줄바꿈 보호 ' + lineInfo.count + '줄.' : '';
   toast(ok
-    ? '치환 완료. 클립보드에 복사했습니다. (' + built.items.length + '종)'
+    ? '치환 완료. 클립보드에 복사했습니다. (고유명사 ' + built.items.length + '종.' + extra + ')'
     : '치환은 됐지만 자동 복사에 실패했습니다. 아래 상자에서 직접 복사하세요.',
     ok ? 'ok' : 'warn');
 });
@@ -1019,13 +1415,31 @@ el.restoreBtn.addEventListener('click', () => {
     return;
   }
 
-  const r = restoreText(text, state.mapping);
+  // 1) 줄 구조를 먼저 되살립니다.
+  let working = text;
+  let lineReport = null;
+  if (state.mapping.lines) {
+    lineReport = restoreLines(working, state.mapping.lines);
+    if (lineReport.applied) working = lineReport.text;
+  }
+
+  // 2) 그다음 고유명사를 되돌립니다.
+  const r = restoreText(working, state.mapping);
   el.resultText.value = r.text;
   el.resStats.textContent = statText(r.text);
   save(STORE.result, r.text);
 
   // 결과 보고
   const problems = [];
+  if (state.mapping.lines) {
+    if (!lineReport.applied) {
+      problems.push('줄 표시를 찾지 못해 줄 구조를 되살리지 못했습니다. 2단계에서 복사한 글을 그대로 붙여넣었는지 확인하세요.');
+    } else if (lineReport.missing.length > 0) {
+      problems.push('줄 표시가 사라진 줄이 ' + lineReport.missing.length + '곳 있습니다 (' +
+        lineReport.missing.slice(0, 10).join(', ') + (lineReport.missing.length > 10 ? ' 외' : '') +
+        '번째 줄). 그 줄의 내용은 앞줄에 붙어 있으니 직접 나눠 주세요.');
+    }
+  }
   if (r.leftover > 0) problems.push('되돌리지 못한 치환 코드가 ' + r.leftover + '개 남아 있습니다. 치환표에 없는 번호일 수 있습니다.');
   if (r.unknown > 0) problems.push('치환표에 없는 번호 ' + r.unknown + '개를 발견했습니다.');
   if (r.missing.length > 0) {
@@ -1035,7 +1449,8 @@ el.restoreBtn.addEventListener('click', () => {
 
   if (problems.length === 0) {
     el.restoreReport.className = 'mt-3 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300';
-    el.restoreReport.innerHTML = '복원 완료. 고유명사 ' + r.usedCount + '종을 모두 되돌렸습니다.';
+    el.restoreReport.innerHTML = '복원 완료. 고유명사 ' + r.usedCount + '종을 되돌렸습니다.' +
+      (state.mapping.lines ? ' 줄 구조 ' + state.mapping.lines.count + '줄도 원래대로 복구했습니다.' : '');
     toast('복원 완료.');
   } else {
     el.restoreReport.className = 'mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200';
